@@ -1,2 +1,0 @@
-# ewainber.github.io
-githubio
