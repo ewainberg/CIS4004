@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pizza Ordering Form</title>
+  <style>
+    body {
+      font-family: "Times New Roman", Times, serif;
+      margin: 0;
+    }
+
+    main {
+      padding: 12px;
+      width: 260px; /* keeps layout close to the figure */
+    }
+
+    h1 {
+      font-size: 36px;
+      margin: 0 0 12px 0;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 28px;
+      margin: 18px 0 10px 0;
+      font-weight: 700;
+    }
+
+    fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0;
+    }
+
+    legend {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 18px 0 10px 0;
+      padding: 0;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0;
+    }
+
+    .row label {
+      width: 60px;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"] {
+      width: 170px;
+    }
+
+    select {
+      width: 140px;
+    }
+
+    .radios label,
+    .checks label {
+      display: block;
+      margin: 2px 0;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 10px;
+      row-gap: 2px;
+      margin-top: 6px;
+    }
+
+    textarea {
+      width: 210px;
+      height: 55px;
+      resize: both;
+    }
+
+    button {
+      margin-top: 6px;
+    }
+
+    section.games {
+      margin-top: 36px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 230px;
+    }
+
+    th, td {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      vertical-align: middle;
+    }
+
+    caption {
+      caption-side: top;
+      text-align: left;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <header>
+      <h1>Pizza Ordering Form</h1>
+    </header>
+
+    <form action="#" method="post">
+      <fieldset aria-labelledby="contact-info">
+        <legend id="contact-info">Contact Information</legend>
+
+        <div class="row">
+          <label for="name">Name:</label>
+          <input id="name" name="name" type="text" required />
+        </div>
+
+        <div class="row">
+          <label for="phone">Phone:</label>
+          <input id="phone" name="phone" type="tel" required />
+        </div>
+
+        <div class="row">
+          <label for="email">Email:</label>
+          <input id="email" name="email" type="email" required />
+        </div>
+      </fieldset>
+
+      <section aria-labelledby="size-heading">
+        <h2 id="size-heading">Select Pizza Size</h2>
+
+        <div class="row">
+          <label for="size">Pizza Size:</label>
+          <select id="size" name="size" required>
+            <option value="" selected disabled>--Select Size--</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+            <option value="xlarge">XLarge</option>
+          </select>
+        </div>
+      </section>
+
+      <fieldset class="radios" aria-labelledby="sauce-heading">
+        <legend id="sauce-heading">Select Sauce</legend>
+
+        <label>
+          <input type="radio" name="sauce" value="marinara" required />
+          Marinara
+        </label>
+        <label>
+          <input type="radio" name="sauce" value="ranch" />
+          Ranch
+        </label>
+        <label>
+          <input type="radio" name="sauce" value="none" />
+          No Sauce
+        </label>
+      </fieldset>
+
+      <fieldset aria-labelledby="toppings-heading">
+        <legend id="toppings-heading">Select Toppings</legend>
+
+        <div class="checks">
+          <label><input type="checkbox" name="toppings" value="pepperoni" /> Pepperoni</label>
+          <label><input type="checkbox" name="toppings" value="sausage" /> Sausage</label>
+
+          <label><input type="checkbox" name="toppings" value="mushroom" /> Mushroom</label>
+          <label><input type="checkbox" name="toppings" value="pineapple" /> Pineapple</label>
+
+          <label><input type="checkbox" name="toppings" value="peppers" /> Peppers</label>
+          <label><input type="checkbox" name="toppings" value="onions" /> Onions</label>
+        </div>
+      </fieldset>
+
+      <section aria-labelledby="instructions-heading">
+        <h2 id="instructions-heading">Additional Instructions</h2>
+
+        <label for="instructions" class="visually-hidden">Additional Instructions</label>
+        <textarea id="instructions" name="instructions">Add instructions</textarea>
+
+        <div>
+          <button type="submit">Submit</button>
+        </div>
+      </section>
+    </form>
+
+    <section class="games" aria-labelledby="games-heading">
+      <h2 id="games-heading" style="font-size: 18px; font-weight: 400; margin-bottom: 6px;">
+        List of My Favorite Games
+      </h2>
+
+      <table>
+        <caption class="visually-hidden">Favorite video games table</caption>
+        <thead>
+          <tr>
+            <th scope="col">Developer</th>
+            <th scope="col">Title</th>
+            <th scope="col">Year</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="3">Bungie</td>
+            <td>Halo</td>
+            <td>2001</td>
+          </tr>
+          <tr>
+            <td>Halo 2</td>
+            <td>2004</td>
+          </tr>
+          <tr>
+            <td>Halo 3</td>
+            <td>2007</td>
+          </tr>
+          <tr>
+            <td>Mojang</td>
+            <td>Minecraft</td>
+            <td>2011</td>
+          </tr>
+          <tr>
+            <td colspan="3">Count: 4</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer></footer>
+  </main>
+</body>
+</html>
