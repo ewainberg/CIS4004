@@ -1,0 +1,151 @@
+/* ----- page baseline ----- */
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  background: #f2f2f2;
+  color: #111;
+}
+
+/* ----- left jump menu (fixed, full height) ----- */
+#jumpMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 15%;
+  min-width: 190px;
+  max-width: 260px;
+
+  padding: 24px 18px;
+  background: #c7972e;
+  border-right: 3px solid #000;
+  overflow-y: auto;
+}
+
+#jumpMenu h2 {
+  margin: 0 0 18px 0;
+  font-size: 2rem;
+}
+
+#jumpMenu a {
+  display: inline-block;
+  margin: 18px 0;
+  font-size: 1.2rem;
+  color: #1a37d8;
+}
+
+/* ----- main content area starts to the right of the jump menu ----- */
+main {
+  margin-left: clamp(190px, 15%, 260px);
+  min-height: 100vh;
+}
+
+/* ----- fixed header across ONLY the main area (not behind jump menu) ----- */
+header {
+  position: fixed;
+  top: 0;
+  left: clamp(190px, 15%, 260px);
+  width: calc(100% - clamp(190px, 15%, 260px));
+  z-index: 1000;
+
+  background: #e40000;
+  padding: 14px 0 10px 0;
+  border-bottom: 3px solid #000;
+  text-align: center;
+}
+
+header p {
+  margin: 0 0 10px 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #000;
+}
+
+/* button row under the title */
+header nav {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+header nav button {
+  width: 240px;
+  padding: 12px 10px;
+
+  background: #0b2bd9;
+  color: #fff;
+  border: 3px solid #000;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* ----- push content down so it doesn't hide under fixed header ----- */
+/* adjust this value if you change header sizing */
+main > h1 {
+  margin: 0;
+  padding-top: 150px; /* space for fixed header */
+  text-align: center;
+  font-size: 3rem;
+  background: #f2f2f2;
+}
+
+/* ----- responsive article layout ----- */
+#container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding: 40px 30px 120px 30px; /* bottom padding so "thanks" doesn't cover content */
+}
+
+#container article {
+  width: 300px;           /* fixed width hint */
+  background: #f7f7f7;
+  padding: 18px 18px 10px 18px;
+}
+
+#container article h2 {
+  margin: 0 0 12px 0;
+  text-align: left;
+  font-size: 1.6rem;
+}
+
+#container article p {
+  margin: 0 0 12px 0;
+  line-height: 1.35;
+  font-size: 0.95rem;
+}
+
+#container article a {
+  color: #1a37d8;
+}
+
+/* ----- fixed bottom-right thanks block ----- */
+#thanks {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 1100;
+
+  margin: 0;
+  padding: 22px 30px;
+
+  background: #87c7ee;
+  border: 3px solid #000;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+/* ----- footer (optional cleanup) ----- */
+footer {
+  padding: 40px 30px 30px 30px;
+  background: #f2f2f2;
+}
