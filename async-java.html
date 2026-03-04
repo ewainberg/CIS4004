@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pokemon Team Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#bfe4f2; margin:0; padding:24px; }
+    .card {
+      max-width: 620px; margin: 0 auto; background:#fff; border: 5px solid #d4a21e;
+      border-radius: 28px; padding: 22px; box-sizing: border-box;
+    }
+    h1 { margin: 0 0 14px; text-align:center; font-size: 20px; }
+    .row { display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap: wrap; }
+    label { font-weight:600; }
+    input[type="text"] { padding:6px 8px; width: 210px; }
+    button { padding:6px 12px; cursor:pointer; }
+    .center { text-align:center; }
+    .spriteWrap { min-height: 200px; display:flex; align-items:center; justify-content:center; }
+    img { image-rendering: pixelated; }
+    .moves { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
+    select { width: 100%; padding:6px; }
+    .divider { height: 1px; background:#ddd; margin: 18px 0; }
+    .team {
+      border: 2px solid #000; margin-top: 14px; padding: 10px;
+    }
+    .teamRow {
+      display:grid; grid-template-columns: 100px 1fr; gap: 12px;
+      padding: 10px 0; border-top: 1px solid #000;
+      align-items: center;
+    }
+    .teamRow:first-child { border-top: none; }
+    .teamRow img { width: 80px; height: 80px; }
+    ul { margin: 0; padding-left: 18px; }
+    .muted { color:#666; font-size: 12px; }
+    .error { color:#b00020; text-align:center; margin-top: 10px; }
+    .ok { color:#0b6; text-align:center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Name or ID</h1>
+
+    <div class="row">
+      <input id="query" type="text" placeholder="e.g. 143 or snorlax" />
+      <button id="findBtn" type="button">Find</button>
+    </div>
+
+    <div id="status" class="muted center" style="margin-top:10px;"></div>
+    <div id="msg" class="center" style="margin-top:10px;"></div>
+
+    <div class="spriteWrap">
+      <img id="sprite" alt="" style="display:none; width:180px; height:180px;" />
+    </div>
+
+    <div class="center" style="margin-top:8px;">
+      <audio id="cry" controls style="width: 95%; max-width: 520px; display:none;"></audio>
+      <div id="noAudio" class="muted" style="display:none;">No audio available for this Pokemon.</div>
+    </div>
+
+    <div class="moves">
+      <select id="move1" disabled></select>
+      <select id="move2" disabled></select>
+      <select id="move3" disabled></select>
+      <select id="move4" disabled></select>
+    </div>
+
+    <div class="center" style="margin-top:12px;">
+      <button id="addBtn" type="button" disabled>Add to Team</button>
+      <div class="muted" style="margin-top:6px;">Team size: <span id="teamCount">0</span>/6</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="team" id="team"></div>
+  </div>
+
+  <script>
+    const API_BASE = "https://pokeapi.co/api/v2/pokemon/";
+    const TEAM_KEY = "poke_team_builder_team_v1";
+    const CACHE_KEY = "poke_team_builder_cache_v1";
+    const CACHE_TTL_MS = 1000 * 60 * 60 * 24;
+
+    const queryEl = document.getElementById("query");
+    const findBtn = document.getElementById("findBtn");
+    const addBtn = document.getElementById("addBtn");
+    const statusEl = document.getElementById("status");
+    const msgEl = document.getElementById("msg");
+
+    const spriteEl = document.getElementById("sprite");
+    const cryEl = document.getElementById("cry");
+    const noAudioEl = document.getElementById("noAudio");
+
+    const moveEls = [
+      document.getElementById("move1"),
+      document.getElementById("move2"),
+      document.getElementById("move3"),
+      document.getElementById("move4"),
+    ];
+
+    const teamEl = document.getElementById("team");
+    const teamCountEl = document.getElementById("teamCount");
+
+    let currentPokemon = null;
+    let memCache = new Map();
+
+    function setMsg(kind, text) {
+      msgEl.className = "";
+      msgEl.textContent = "";
+      if (!text) return;
+      msgEl.className = kind === "error" ? "error" : "ok";
+      msgEl.textContent = text;
+    }
+
+    function normalizeQuery(s) {
+      return String(s || "").trim().toLowerCase();
+    }
+
+    function loadCacheObj() {
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return {};
+        const obj = JSON.parse(raw);
+        return obj && typeof obj === "object" ? obj : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveCacheObj(obj) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+      } catch {}
+    }
+
+    async function cachedFetchJson(url) {
+      if (memCache.has(url)) return memCache.get(url);
+
+      const now = Date.now();
+      const cacheObj = loadCacheObj();
+      const entry = cacheObj[url];
+
+      if (entry && entry.t && entry.v && (now - entry.t) < CACHE_TTL_MS) {
+        memCache.set(url, entry.v);
+        return entry.v;
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Fetch failed: " + res.status);
+
+      const json = await res.json();
+      memCache.set(url, json);
+
+      cacheObj[url] = { t: now, v: json };
+      saveCacheObj(cacheObj);
+
+      return json;
+    }
+
+    function clearPokemonUI() {
+      currentPokemon = null;
+      spriteEl.style.display = "none";
+      spriteEl.src = "";
+      spriteEl.alt = "";
+
+      cryEl.pause();
+      cryEl.removeAttribute("src");
+      cryEl.load();
+      cryEl.style.display = "none";
+      noAudioEl.style.display = "none";
+
+      for (const sel of moveEls) {
+        sel.innerHTML = "";
+        sel.disabled = true;
+      }
+      addBtn.disabled = true;
+      statusEl.textContent = "";
+    }
+
+    function fillMoveSelect(selectEl, moves, preselect) {
+      selectEl.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Choose a move";
+      selectEl.appendChild(placeholder);
+
+      for (const m of moves) {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = m;
+        selectEl.appendChild(opt);
+      }
+
+      if (preselect && moves.includes(preselect)) {
+        selectEl.value = preselect;
+      } else {
+        selectEl.value = "";
+      }
+    }
+
+    function getCryUrl(p) {
+      if (!p || !p.cries) return "";
+      return p.cries.latest || p.cries.legacy || "";
+    }
+
+    function getSpriteUrl(p) {
+      if (!p || !p.sprites) return "";
+      return p.sprites.front_default || "";
+    }
+
+    function getMoveNames(p) {
+      const arr = (p && Array.isArray(p.moves)) ? p.moves : [];
+      const names = [];
+      for (const entry of arr) {
+        if (entry && entry.move && entry.move.name) names.push(entry.move.name);
+      }
+      names.sort();
+      return names;
+    }
+
+    function loadTeam() {
+      try {
+        const raw = localStorage.getItem(TEAM_KEY);
+        const team = raw ? JSON.parse(raw) : [];
+        return Array.isArray(team) ? team : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTeam(team) {
+      try {
+        localStorage.setItem(TEAM_KEY, JSON.stringify(team));
+      } catch {}
+    }
+
+    function renderTeam() {
+      const team = loadTeam();
+      teamCountEl.textContent = String(team.length);
+
+      if (team.length === 0) {
+        teamEl.innerHTML = '<div class="muted center">No team members yet.</div>';
+        return;
+      }
+
+      teamEl.innerHTML = "";
+      for (const member of team) {
+        const row = document.createElement("div");
+        row.className = "teamRow";
+
+        const img = document.createElement("img");
+        img.src = member.sprite || "";
+        img.alt = member.name || "pokemon";
+
+        const right = document.createElement("div");
+        const title = document.createElement("div");
+        title.style.fontWeight = "700";
+        title.textContent = member.name;
+
+        const ul = document.createElement("ul");
+        for (const mv of member.moves) {
+          const li = document.createElement("li");
+          li.textContent = mv || "(none)";
+          ul.appendChild(li);
+        }
+
+        right.appendChild(title);
+        right.appendChild(ul);
+
+        row.appendChild(img);
+        row.appendChild(right);
+        teamEl.appendChild(row);
+      }
+    }
+
+    function teamIsFull() {
+      return loadTeam().length >= 6;
+    }
+
+    async function findPokemon() {
+      setMsg("", "");
+      statusEl.textContent = "";
+      clearPokemonUI();
+
+      const q = normalizeQuery(queryEl.value);
+      if (!q) {
+        setMsg("error", "Enter a Pokemon name or ID.");
+        return;
+      }
+
+      const url = API_BASE + encodeURIComponent(q);
+      statusEl.textContent = "Loading...";
+
+      try {
+        const data = await cachedFetchJson(url);
+        currentPokemon = data;
+
+        const name = data.name || q;
+        const spriteUrl = getSpriteUrl(data);
+        const cryUrl = getCryUrl(data);
+        const moveNames = getMoveNames(data);
+
+        if (spriteUrl) {
+          spriteEl.src = spriteUrl;
+          spriteEl.alt = name;
+          spriteEl.style.display = "block";
+        } else {
+          spriteEl.style.display = "none";
+        }
+
+        if (cryUrl) {
+          cryEl.src = cryUrl;
+          cryEl.load();
+          cryEl.style.display = "inline-block";
+          noAudioEl.style.display = "none";
+        } else {
+          cryEl.style.display = "none";
+          noAudioEl.style.display = "block";
+        }
+
+        for (const sel of moveEls) {
+          fillMoveSelect(sel, moveNames, "");
+          sel.disabled = false;
+        }
+
+        addBtn.disabled = teamIsFull();
+        statusEl.textContent = `Loaded: ${name}`;
+        if (teamIsFull()) setMsg("error", "Team is full (6).");
+      } catch (err) {
+        statusEl.textContent = "";
+        setMsg("error", "Pokemon not found or API error.");
+      }
+    }
+
+    function addToTeam() {
+      setMsg("", "");
+      if (!currentPokemon) {
+        setMsg("error", "Find a Pokemon first.");
+        return;
+      }
+      const team = loadTeam();
+      if (team.length >= 6) {
+        setMsg("error", "Team is full (6).");
+        addBtn.disabled = true;
+        return;
+      }
+
+      const chosen = moveEls.map(s => s.value).filter(Boolean);
+      while (chosen.length < 4) chosen.push("(none)");
+
+      const member = {
+        id: currentPokemon.id,
+        name: currentPokemon.name,
+        sprite: getSpriteUrl(currentPokemon),
+        moves: chosen.slice(0, 4),
+      };
+
+      team.push(member);
+      saveTeam(team);
+      renderTeam();
+
+      setMsg("ok", "Added to team.");
+      addBtn.disabled = team.length >= 6;
+    }
+
+    findBtn.addEventListener("click", findPokemon);
+    addBtn.addEventListener("click", addToTeam);
+
+    queryEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") findPokemon();
+    });
+
+    renderTeam();
+    clearPokemonUI();
+  </script>
+</body>
+</html>
